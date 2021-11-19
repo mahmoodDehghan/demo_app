@@ -1,3 +1,4 @@
+import '../../providers/user_loginned_state_provider.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -5,15 +6,15 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class LoginForm extends HookConsumerWidget {
-  LoginForm({Key? key, required this.loginEntry, required this.remember})
-      : super(key: key);
+  LoginForm({
+    Key? key,
+    required this.loginEntry,
+    required this.remember,
+  }) : super(key: key);
   final ValueNotifier remember;
   final ValueNotifier loginEntry;
-  // final Function(Map<String, String> entries) login;
 
   final _formKey = GlobalKey<FormState>();
-  // late TextEditingController _usernameController;
-  // late TextEditingController _passController;
 
   String? _passwordValidator(String? entry, BuildContext context) {
     String? _err = _filledValidator(entry, context);
@@ -70,14 +71,21 @@ class LoginForm extends HookConsumerWidget {
     }
   }
 
-  void _onSubmit({required String username, required String pass}) {
+  void _onSubmit({
+    required String username,
+    required String pass,
+    required WidgetRef ref,
+    required BuildContext context,
+  }) {
     if (_formKey.currentState!.validate()) {
       Map<String, String> loginEntries = {
         'email': username,
         'password': pass,
       };
       loginEntry.value = loginEntries;
-      // login(loginEntries);
+      ref
+          .read(userProvider.notifier)
+          .login(context, loginEntries, remember.value);
     }
   }
 
@@ -127,8 +135,11 @@ class LoginForm extends HookConsumerWidget {
               ),
               ElevatedButton(
                 onPressed: () => _onSubmit(
-                    username: _usernameController.text,
-                    pass: _passController.text),
+                  username: _usernameController.text,
+                  pass: _passController.text,
+                  context: context,
+                  ref: ref,
+                ),
                 child: Text(AppLocalizations.of(context)!.loginLabel),
               )
             ],

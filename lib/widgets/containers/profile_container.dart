@@ -1,18 +1,16 @@
-import '../../helpers/internet_helper.dart';
+import 'package:demo_app/providers/user_loginned_state_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../helpers/const_items.dart';
 import '../../providers/get_profile_provider.dart';
 import '../../providers/shared_prefrences_provider.dart';
-import '../../widgets/containers/login_container.dart';
-import '../../widgets/containers/user_details_container.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ProfilePageContainer extends HookConsumerWidget {
-  const ProfilePageContainer({Key? key, required this.logOutState})
-      : super(key: key);
-  final ValueNotifier logOutState;
+  const ProfilePageContainer({
+    Key? key,
+  }) : super(key: key);
 
   Widget getProgressBar() {
     return const Center(
@@ -44,47 +42,20 @@ class ProfilePageContainer extends HookConsumerWidget {
         )
       ],
     );
-    // return Center(
-    //   child: Text(
-    //     error,
-    //   ),
-    // );
+  }
+
+  Widget getProperWidget(
+      BuildContext context, WidgetRef ref, UserLoginState state) {
+    if (state.isGettingProfileFailed) {
+      return getErrorWidget(context, ref, state.error);
+    } else {
+      return getProgressBar();
+    }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (logOutState.value) {
-      return const LoginContainer();
-    }
-    final prefProvider = ref.watch(sharedPrefrencesProvider);
-    return prefProvider.when(
-      data: (pref) {
-        if (pref.getString(ConstItems.userToken) == null) {
-          return const LoginContainer();
-        } else {
-          final profile = ref.watch(getProfileProvider(context));
-          return profile.when(
-            data: (profile) {
-              return UserDetailsContainer(
-                profile: profile,
-              );
-            },
-            error: (error, stack) {
-              if (InternetHelper.isNoInternetError(error.toString())) {
-                return getErrorWidget(context, ref,
-                    AppLocalizations.of(context)!.noInternetError);
-              }
-              return getErrorWidget(context, ref, error.toString());
-            },
-            loading: getProgressBar,
-          );
-        }
-      },
-      error: (error, stack) {
-        return getErrorWidget(
-            context, ref, AppLocalizations.of(context)!.generalError);
-      },
-      loading: getProgressBar,
-    );
+    final userState = ref.watch(userProvider);
+    return getProperWidget(context, ref, userState);
   }
 }

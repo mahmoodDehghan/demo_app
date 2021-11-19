@@ -6,4 +6,5 @@ class ConstItems {
       'https://ramonex-assets.s3.ir-thr-at1.arvanstorage.com/';
   static const loginUrl = '/api/user/site/v1/login';
   static const getProfileUrl = '/api/user/site/v1/userinfo/get';
+  static const userRefreshToken = 'RefreshToken';
 }

@@ -1,3 +1,7 @@
+import 'package:demo_app/widgets/containers/login_container.dart';
+import 'package:demo_app/widgets/containers/user_details_container.dart';
+
+import '../providers/user_loginned_state_provider.dart';
 import '../helpers/const_items.dart';
 import '../providers/shared_prefrences_provider.dart';
 import '../widgets/containers/profile_container.dart';
@@ -11,14 +15,39 @@ class ProfileScreen extends HookConsumerWidget {
 
   const ProfileScreen({Key? key}) : super(key: key);
 
+  Widget getPrefError(BuildContext context, String error) {
+    return Scaffold(
+      body: Center(
+        child: Text(
+          error,
+          style: Theme.of(context).textTheme.headline4,
+        ),
+      ),
+    );
+  }
+
+  Widget getPrefLoading() {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  Widget getProperContainer(UserLoginState state) {
+    if (state.isLogined) {
+      return UserDetailsContainer(profile: state.profile!);
+    } else if (state.isInGettingProfile || state.isGettingProfileFailed) {
+      return const ProfilePageContainer();
+    } else {
+      return const LoginContainer();
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final logoutCalled = useState(false);
-    final showLogout = useState(false);
-    final pref = ref.watch(sharedPrefrencesProvider);
-    pref.whenData((pref) {
-      showLogout.value = pref.getString(ConstItems.userToken) != null;
-    });
+    ref.read(userProvider.notifier).checkLoginStatus(context);
+    final userState = ref.watch(userProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -26,12 +55,10 @@ class ProfileScreen extends HookConsumerWidget {
           style: Theme.of(context).textTheme.headline1,
         ),
         actions: [
-          if (showLogout.value)
+          if (userState.isLogined || userState.needToGetProfile)
             IconButton(
-                onPressed: () async {
-                  final pref = await ref.read(sharedPrefrencesProvider.future);
-                  pref.remove(ConstItems.userToken);
-                  logoutCalled.value = true;
+                onPressed: () {
+                  ref.read(userProvider.notifier).logout();
                 },
                 icon: const Icon(
                   Icons.logout,
@@ -40,7 +67,7 @@ class ProfileScreen extends HookConsumerWidget {
         ],
       ),
       body: Center(
-        child: ProfilePageContainer(logOutState: logoutCalled),
+        child: getProperContainer(userState),
       ),
     );
   }
